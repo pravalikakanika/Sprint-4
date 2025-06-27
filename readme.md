@@ -11,11 +11,29 @@
 | Pravalika Kanikarapu  |      |      |         | L1             | Rishabh Sharma       |
 | Pravalika Kanikarapu  |      |      |         | L2             | Piyush Upadhyay      |
 
+
+
+# Table of Contents
+
+- [Introduction](#introduction)
+- [System Requirements](#system-requirements)
+- [Prerequisites](#prerequisites)
+- [Ports Required](#ports-required)
+- [Step-by-step Demo Script](#step-by-step-demo-script)
+- [Conclusion](#conclusion)
+- [Contact Information](#contact-information)
+- [References](#references)
+
+
+
+
 # Introduction
 
 This documentation is about Drift detection, how Terraform detects drift between the declared infrastructure (.tf files) and actual state in the cloud.
 
-## System Requirements
+For more information related follow this link[Terraform Drift Documentation](https://github.com/Cloud-NInja-snaatak/Documentation/tree/Kanika-SCRUM-353/terraform/drift/documentation)
+
+# System Requirements
 
 | Component        | Minimum Requirement           |
 |------------------|-------------------------------|
@@ -25,7 +43,7 @@ This documentation is about Drift detection, how Terraform detects drift between
 | Processor        | Single-core                     |
 | Instance Type    | t2.small                      |
 
-## Prerequisites
+# Prerequisites
 
 | **Category**                    | **Requirement**                                                                    |
 | ------------------------------- | ---------------------------------------------------------------------------------- |
@@ -36,7 +54,7 @@ This documentation is about Drift detection, how Terraform detects drift between
 | **Manual Access**               | Console/portal access to manually change resources (to simulate drift)             |
 
 
-## Ports Required
+# Ports Required
 
 | Port | Used By     | Description                                      |
 |------|-------------|--------------------------------------------------|
@@ -44,99 +62,105 @@ This documentation is about Drift detection, how Terraform detects drift between
 
 
 
-## Commands to setup
+# Step-by-step demo script
 
-### 1. Update Package Index
-
-**Follow Step 3 here**: [Ubuntu Basic System Commands](https://github.com/snaatak-Downtime-Crew/Documentation/tree/main/common_stack/operating_system/ubuntu/sop/commoncommands#1-basic-system-commands)
-
-
-### 2.  Install Terraform 
+## Clone or create a working directory
 ```
-sudo apt-get install -y gnupg software-properties-common curl
+mkdir terraform-drift-poc
+cd terraform-drift-poc
 ```
-#### Add HashiCorp GPG key
+
+## Create main.tf
 ```
-curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_s3_bucket" "example" {
+  bucket = "terraform-drift-poc-unique12345" # Use a unique name!
+  tags = {
+    Environment = "POC"
+  }
+}
 ```
-#### Add HashiCorp repo
+
+##  Initialize Terraform
 ```
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-  sudo tee /etc/apt/sources.list.d/hashicorp.list
+terraform init
 ```
-#### Install Terraform
-```
-sudo apt update && sudo apt install terraform
-```
-#### Check version
-```
-terraform version
-```
-![Screenshot 2025-06-23 214229](https://github.com/user-attachments/assets/750c6629-a978-4bf8-9818-469e33b50e9b)
+![image](https://github.com/user-attachments/assets/5427bde7-9e12-4a34-b86a-48b25de343d7)
 
 
-
-### 3. Create an Infra using Terraform
-
-#### Create Terraform module
-![Screenshot 2025-06-23 214544](https://github.com/user-attachments/assets/9088b578-b6dc-4f4e-a8ec-21d6e435b1ea)
-
-
-### 4. Run Terraform Commands
-
-```
-terraform init  
-```
-It initializes a working directory that contains Terraform configuration files. 
-- Downloads the necessary provider plugins (e.g., AWS, Azure, Google Cloud).
-- Sets up the remote backend (like S3, local, etc.) for storing the state file.
-- Sets up the .terraform/ directory for use with plan, apply, etc.
-
-Terraform creates a .terraform folder which contains:
-Provider binaries
-Backend configuration
-Lock file (.terraform.lock.hcl) to pin plugin versions
-![Screenshot 2025-06-23 215324](https://github.com/user-attachments/assets/93fb7b33-5ef7-4e55-9da7-cae892eae340)
-
-
-```
-terraform validate
-```
-It validates that your configuration files are syntactically and logically correct.
-![Screenshot 2025-06-23 215431](https://github.com/user-attachments/assets/c9a30cbd-51f1-4460-b023-7a0625ebfd0d)
-
-
-```
-terraform plan 
-```
-Shows what changes Terraform will make to match your config with the actual infrastructure 
-
-![Screenshot 2025-06-23 123016](https://github.com/user-attachments/assets/bf99c7c8-d1ab-4b4f-bce6-d38e174a42a1)
-
-
+##  Apply infrastructure
 ```
 terraform apply -auto-approve
 ```
-![Screenshot 2025-06-23 220027](https://github.com/user-attachments/assets/4e7189fb-382b-463e-9c33-6f773352b284)
+![image](https://github.com/user-attachments/assets/2d40eaa1-07c4-4d0d-91f7-afb8f38037ad)
+
+
+## Verify
+
+- Go to AWS Console → S3 → Find your bucket
+
+- Check that the tag Environment = POC is present
+
+![image](https://github.com/user-attachments/assets/4dc15f24-14e9-4bd7-b9c4-823ee8761d35)
+
+
+##  Create drift manually
+  
+- In AWS console, remove the Environment tag or change it to Test
+
+![image](https://github.com/user-attachments/assets/860bd8df-5a15-4581-8c15-b4e37aafc4ed)
+
+
+  ## Detect drift
+```
+terraform plan
+```
+![image](https://github.com/user-attachments/assets/480a82f6-12a0-4f7c-ab31-3eff5cf5ee54)
+
+### Expected output:
+```
+~ resource "aws_s3_bucket" "example" {
+      tags = {}
+        -> Environment = "POC"
+    }
+```
+
+
+##  Fix drift
+```
+terraform apply -auto-approve
+```
+
+
+![image](https://github.com/user-attachments/assets/9383913d-2cda-4f7d-9ca9-acff6f85e468)
+
+
+![image](https://github.com/user-attachments/assets/5d9aff1f-89bd-4cfc-bef7-cd611956a86a)
+
+
+# Conclusion
+
+This POC demonstrates that Terraform can reliably detect **drift** between the declared infrastructure in `.tf` files and the actual state in the cloud. By simulating a manual change (e.g., modifying or removing a tag), and then running `terraform plan`, we clearly observe Terraform’s ability to recognize discrepancies.
+
+Key outcomes:
+-  Drift detection using standard `terraform plan` is straightforward and effective.
+-  Manual infrastructure changes outside Terraform are flagged as deviations.
+-  Drift can be corrected seamlessly using `terraform apply`.
+
+This reinforces the importance of **Infrastructure as Code (IaC)** and highlights the value of regularly running `terraform plan` in CI pipelines to monitor and maintain infrastructure integrity.
 
 
 
-## Conclusion
-
-Use terraform plan -detailed-exitcode in Jenkins. It is:
-Simple
-Fast to integrate
-Free
-CI/CD-friendly
-No new tools to maintain
-
-## Contact Information
+# Contact Information
 
 | Name         | Email Address                                 |
 |--------------|-----------------------------------------------|
 | Pravalika  | kanikarapu.pravalika.snaatak@mygurukulam.co|
 
-### References
+# References
 | Links                                             | Descriptions                                                    |
 |---------------------------------------------------|-----------------------------------------------------------------|
-|[Link](https://github.com/snaatak-Downtime-Crew/Documentation/blob/SCRUMS-388-Adil/Terraform/drift/doc/README.md) |Documentation |
+|[Terraform Drift Documentation](https://github.com/Cloud-NInja-snaatak/Documentation/tree/Kanika-SCRUM-353/terraform/drift/documentation) |Documentation |
